@@ -26,69 +26,64 @@ public struct Session {
         self.singleResourceSemaphore = DispatchSemaphore(value: 0)
     }
 
-    public func post( url: String, headers: [String: String] = [:]) -> Result<Response, SessionError> {
-        return request(
+    public func post(
+        url: String,
+        params: [String: String] = [:],
+        body: Body,
+        headers: [String: String] = [:]
+    ) -> Result<Response, SessionError> {
+        return requestFor(
             method: .post,
             url: url,
+            params: [:],
             relativeTo: baseURL,
             baseHeaders: self.headers,
-            additionalHeaders: headers
-        )
+            additionalHeaders: headers,
+            body: body
+        ).flatMap(exec(request:))
     }
 
-    public func get(url: String, headers: [String: String] = [:]) -> Result<Response, SessionError> {
-        return request(
+    public func get(
+        url: String,
+        params: [String: String],
+        headers: [String: String] = [:]
+    ) -> Result<Response, SessionError> {
+        return requestFor(
             method: .get,
             url: url,
+            params: params,
             relativeTo: baseURL,
             baseHeaders: self.headers,
-            additionalHeaders: headers
-        )
+            additionalHeaders: headers,
+            body: .none
+        ).flatMap(exec(request:))
     }
 
-    public func head(url: String, headers: [String: String] = [:]) -> Result<Response, SessionError> {
-        return request(
-            method: .head,
-            url: url,
-            relativeTo: baseURL,
-            baseHeaders: self.headers,
-            additionalHeaders: headers
-        )
-    }
-
-    public func delete(url: String, headers: [String: String] = [:]) -> Result<Response, SessionError> {
-        return request(
-            method: .delete,
-            url: url,
-            relativeTo: baseURL,
-            baseHeaders: self.headers,
-            additionalHeaders: headers
-        )
-    }
-
-    public func patch(url: String, headers: [String: String] = [:]) -> Result<Response, SessionError> {
-        return request(
-            method: .patch,
-            url: url,
-            relativeTo: baseURL,
-            baseHeaders: self.headers,
-            additionalHeaders: headers
-        )
-    }
-
-    public func request(
+    public func requestFor(
         method: HTTPMethod,
         url: String,
+        params: [String: String],
         relativeTo baseURL: URL?,
         baseHeaders: [String: String],
-        additionalHeaders: [String: String]
-    ) -> Result<Response, SessionError> {
+        additionalHeaders: [String: String],
+        body: Body
+    ) -> Result<URLRequest, SessionError> {
 
         guard let endpoint = URL(string: url, relativeTo: baseURL) else {
             return .failure(.invalidURL)
         }
 
-        var request = URLRequest(url: endpoint)
+        guard var components = URLComponents(url: endpoint, resolvingAgainstBaseURL: true) else {
+            return .failure(.invalidURL)
+        }
+
+        components.queryItems = params.map({ URLQueryItem(name: $0, value: $1) })
+
+        guard let finalURL = components.url else {
+            return .failure(.invalidURL)
+        }
+
+        var request = URLRequest(url: finalURL)
         request.httpMethod = method.rawValue
         for headers in [baseHeaders, additionalHeaders] {
             for (key, value) in headers {
@@ -96,33 +91,63 @@ public struct Session {
             }
         }
 
-        var sessionError: NSError? = nil
-        var statusCode: Int? = nil
-        var responseData: Data? = nil
-        var responseHeaders: [String: String]? = nil
+        let requestBody: Data?
+        switch body {
+        case .none:
+            requestBody = nil
+            break
+        case let .jsonObject(obj):
+            guard let data = try? JSONSerialization.data(withJSONObject: obj) else {
+                return .failure(.invalidBody)
+            }
+            requestBody = data
+        case let .jsonArray(array):
+            guard let data = try? JSONSerialization.data(withJSONObject: array) else {
+                return .failure(.invalidBody)
+            }
+            requestBody = data
+        case let .custom(data):
+            requestBody = data
+        case .formEncoded:
+            requestBody = nil
+            fatalError("Not implemented")
+        }
+
+        request.httpBody = requestBody
+
+        return .success(request)
+    }
+
+    public func exec(request: URLRequest) -> Result<Response, SessionError> {
+        var status: Result<Response, SessionError> = .failure(.invalidResponse)
         urlSession.dataTask(with: request, completionHandler: { (data, response, error) in
             defer {
                 self.singleResourceSemaphore.signal()
             }
 
-            sessionError = error.map({ $0 as NSError })
-            let response = response as? HTTPURLResponse
+            if let error = error {
+                status = .failure(.error(error as NSError))
+                return
+            }
 
-            statusCode = response?.statusCode
-            responseHeaders = response?.allHeaderFields as? [String: String]
-            responseData = data ?? Data()
+            guard let response = response as? HTTPURLResponse,
+                  let data = data else {
+                status = .failure(.invalidResponse)
+                return
+            }
+
+            status = .success(
+                Response(
+                    statusCode: response.statusCode, 
+                    headerFields: response.allHeaderFields as? [String: String] ?? [:],
+                    data: data
+                )
+            )
         }).resume()
 
         singleResourceSemaphore.wait()
 
-        switch (sessionError, statusCode, responseHeaders, responseData) {
-        case let (.some(error), _, _, _):
-            return .failure(.error(error))
-        case let(.none, .some(code), .some(headers), .some(data)):
-            return .success(Response(statusCode: code, headerFields: headers, data: data))
-        default:
-            return .failure(.invalidResponse)
-        }
+        return status
     }
 
     public enum HTTPMethod: String {
@@ -133,11 +158,20 @@ public struct Session {
         case delete = "DELETE"
         case patch  = "PATCH"
     }
+
+    public enum Body {
+        case none
+        case jsonObject([String: Any])
+        case jsonArray([[String: Any]])
+        case formEncoded([String: String])
+        case custom(Data)
+    }
 }
 
 
 public enum SessionError: Error {
     case invalidURL
+    case invalidBody
     case invalidResponse
     case error(NSError)
 }
