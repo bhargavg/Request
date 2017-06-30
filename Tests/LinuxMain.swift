@@ -2,5 +2,6 @@ import XCTest
 @testable import RequestTests
 
 XCTMain([
-    testCase(RequestGenerationTests.allTests),
+    testCase(SessoinRequestGenerationTests.allTests),
+    testCase(EndToEndTests.allTests),
 ])

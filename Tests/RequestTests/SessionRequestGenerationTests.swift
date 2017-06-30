@@ -2,7 +2,7 @@ import XCTest
 import Result
 @testable import Request
 
-class RequestGenerationTests: XCTestCase {
+class SessionRequestGenerationTests: XCTestCase {
     func testGET() {
         let result = try! Session().requestFor(
             method: .get,

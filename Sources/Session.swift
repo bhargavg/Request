@@ -32,13 +32,18 @@ public struct Session {
         body: Body,
         headers: [String: String] = [:]
     ) -> Result<Response, SessionError> {
+        var modifiedHeaders = body.additionalHeaders
+        for (key, value) in headers {
+            modifiedHeaders[key] = value
+        }
+
         return requestFor(
             method: .post,
             url: url,
-            params: [:],
+            params: params,
             relativeTo: baseURL,
             baseHeaders: self.headers,
-            additionalHeaders: headers,
+            additionalHeaders: modifiedHeaders,
             body: body
         ).flatMap(exec(request:))
     }
@@ -138,7 +143,7 @@ public struct Session {
 
             status = .success(
                 Response(
-                    statusCode: response.statusCode, 
+                    statusCode: response.statusCode,
                     headerFields: response.allHeaderFields as? [String: String] ?? [:],
                     data: data
                 )
@@ -165,6 +170,17 @@ public struct Session {
         case jsonArray([[String: Any]])
         case formEncoded([String: String])
         case custom(Data)
+
+        var additionalHeaders: [String: String] {
+            switch self {
+            case .jsonObject, .jsonArray:
+                return ["Content-Type": "application/json"]
+            case .formEncoded:
+                return ["Content-Type": "application/x-www-form-urlencoded"]
+            case .custom, .none:
+                return [:]
+            }
+        }
     }
 }
 
@@ -173,6 +189,7 @@ public enum SessionError: Error {
     case invalidURL
     case invalidBody
     case invalidResponse
+    case invalidSession
     case error(NSError)
 }
 
