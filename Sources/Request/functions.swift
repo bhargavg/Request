@@ -4,8 +4,7 @@ fileprivate let sharedSession = try? Session()
 
 public func get(
    url: String,
-   params: [String: String] = [:],
-   headers: [String: String] = [:]
+   params: Params = .default
 ) -> Result<Response, SessionError> {
     guard let session = sharedSession else {
         return .failure(.invalidSession)
@@ -13,16 +12,27 @@ public func get(
 
     return session.get(
         url: url,
-        params: params,
-        headers: headers
+        params: params
+    )
+}
+
+public func get(
+    url: String,
+    params: (Params.Builder) -> ()
+) -> Result<Response, SessionError> {
+    guard let session = sharedSession else {
+        return .failure(.invalidSession)
+    }
+
+    return session.get(
+        url: url,
+        params: params
     )
 }
 
 public func post(
     url: String,
-    params: [String: String] = [:],
-    headers: [String: String] = [:],
-    body: Session.Body = .none
+    params: Params = .default
 ) -> Result<Response, SessionError> {
     guard let session = sharedSession else {
         return .failure(.invalidSession)
@@ -30,9 +40,20 @@ public func post(
 
     return session.post(
         url: url,
-        params: params,
-        body: body,
-        headers: headers
+        params: params
     )
 }
 
+public func post(
+    url: String,
+    params: (Params.Builder) -> ()
+) -> Result<Response, SessionError> {
+    guard let session = sharedSession else {
+        return .failure(.invalidSession)
+    }
+
+    return session.post(
+        url: url,
+        params: params
+    )
+}

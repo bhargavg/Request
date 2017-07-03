@@ -28,50 +28,56 @@ public struct Session {
 
     public func post(
         url: String,
-        params: [String: String] = [:],
-        body: Body,
-        headers: [String: String] = [:]
+        params: (Params.Builder) -> ()
     ) -> Result<Response, SessionError> {
-        var modifiedHeaders = body.additionalHeaders
-        for (key, value) in headers {
-            modifiedHeaders[key] = value
-        }
+
+        let builder = Params.Builder()
+        params(builder)
+
+        return post(url: url, params: builder.build())
+    }
+
+    public func post(
+        url: String,
+        params: Params = Params.default
+    ) -> Result<Response, SessionError> {
+        let fullParams = params.merging(sessionHeaders: headers)
 
         return requestFor(
             method: .post,
             url: url,
-            params: params,
             relativeTo: baseURL,
-            baseHeaders: self.headers,
-            additionalHeaders: modifiedHeaders,
-            body: body
+            params: fullParams
         ).flatMap(exec(request:))
     }
 
     public func get(
         url: String,
-        params: [String: String],
-        headers: [String: String] = [:]
+        params: Params = Params.default
     ) -> Result<Response, SessionError> {
         return requestFor(
             method: .get,
             url: url,
-            params: params,
             relativeTo: baseURL,
-            baseHeaders: self.headers,
-            additionalHeaders: headers,
-            body: .none
+            params: params
         ).flatMap(exec(request:))
+    }
+
+    public func get(
+        url: String,
+        params: (Params.Builder) -> ()
+    ) -> Result<Response, SessionError> {
+        let builder = Params.Builder()
+        params(builder)
+
+        return get(url: url, params: builder.build())
     }
 
     public func requestFor(
         method: HTTPMethod,
         url: String,
-        params: [String: String],
         relativeTo baseURL: URL?,
-        baseHeaders: [String: String],
-        additionalHeaders: [String: String],
-        body: Body
+        params: Params
     ) -> Result<URLRequest, SessionError> {
 
         guard let endpoint = URL(string: url, relativeTo: baseURL) else {
@@ -82,7 +88,7 @@ public struct Session {
             return .failure(.invalidURL)
         }
 
-        components.queryItems = params.map({ URLQueryItem(name: $0, value: $1) })
+        components.queryItems = params.queryItems.map({ URLQueryItem(name: $0, value: $1) })
 
         guard let finalURL = components.url else {
             return .failure(.invalidURL)
@@ -90,14 +96,13 @@ public struct Session {
 
         var request = URLRequest(url: finalURL)
         request.httpMethod = method.rawValue
-        for headers in [baseHeaders, additionalHeaders] {
-            for (key, value) in headers {
-                request.setValue(value, forHTTPHeaderField: key)
-            }
+
+        for (key, value) in params.headers {
+            request.setValue(value, forHTTPHeaderField: key)
         }
 
         let requestBody: Data?
-        switch body {
+        switch params.body {
         case .none:
             requestBody = nil
             break

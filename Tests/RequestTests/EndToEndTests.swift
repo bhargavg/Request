@@ -26,16 +26,14 @@ class EndToEndTests: XCTestCase {
     }
 
     func testGET() {
+        let params = Params(
+            headers: ["X-Custom-Header": "foo bar"],
+            queryItems: ["foo": "bar", "2": "%@#^)", "c": "2"],
+            body: .none
+        )
         let result = get(
             url: "https://httpbin.org/get",
-            params: [
-                "foo": "bar",
-                "2": "%@#^)",
-                "c": "2",
-            ],
-            headers: [
-                "X-Custom-Header": "foo bar"
-            ]
+            params: params
         )
 
         switch result {
@@ -63,19 +61,14 @@ class EndToEndTests: XCTestCase {
     }
 
     func testPOST() {
+        let params = Params(
+            headers: ["X-Custom-Header": "foo bar"],
+            queryItems: ["foo": "bar", "2": "%@#^)", "c": "2"],
+            body: .jsonObject(["foo": "bar"])
+        )
         let result = post(
             url: "https://httpbin.org/post",
-            params: [
-                "foo": "bar",
-                "2": "%@#^)",
-                "c": "2",
-            ],
-            headers: [
-                "X-Custom-Header": "foo bar"
-            ],
-            body: .jsonObject([
-                "foo": "bar"
-            ])
+            params: params
         )
 
         switch result {

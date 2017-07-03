@@ -14,4 +14,3 @@ extension Response: Equatable {
                 && (lhs.data == rhs.data)
     }
 }
-

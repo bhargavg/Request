@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "OBJ_28"
+               BlueprintIdentifier = "OBJ_30"
                BuildableName = "Result.framework"
                BlueprintName = "Result"
                ReferencedContainer = "container:Request.xcodeproj">
@@ -28,7 +28,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "OBJ_36"
+               BlueprintIdentifier = "OBJ_38"
                BuildableName = "Request.framework"
                BlueprintName = "Request"
                ReferencedContainer = "container:Request.xcodeproj">
@@ -46,7 +46,7 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "OBJ_47"
+               BlueprintIdentifier = "OBJ_51"
                BuildableName = "RequestTests.xctest"
                BlueprintName = "RequestTests"
                ReferencedContainer = "container:Request.xcodeproj">
@@ -69,7 +69,7 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "OBJ_28"
+            BlueprintIdentifier = "OBJ_30"
             BuildableName = "Result.framework"
             BlueprintName = "Result"
             ReferencedContainer = "container:Request.xcodeproj">

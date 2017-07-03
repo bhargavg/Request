@@ -4,22 +4,17 @@ import Result
 
 class SessionRequestGenerationTests: XCTestCase {
     func testGET() {
+        let params = Params(
+            headers: ["X-foo": "foo", "X-bar": "1&2 %"],
+            queryItems: ["foo": "bar", "baz": "1&2 %"],
+            body: .none
+        )
+
         let result = try! Session().requestFor(
             method: .get,
             url: "/get",
-            params: [
-                "foo": "bar",
-                "baz": "1&2 %"
-            ],
             relativeTo: URL(string: "https://httpbin.org"),
-            baseHeaders: [
-                "X-foo": "foo",
-                "X-bar": "1&2 %"
-            ],
-            additionalHeaders: [
-                "X-BAR": " bar "
-            ],
-            body: .none
+            params: params
         )
 
         guard let request = result.value else {
@@ -31,36 +26,23 @@ class SessionRequestGenerationTests: XCTestCase {
         XCTAssertEqual(request.url?.absoluteString, "https://httpbin.org/get?baz=1%262%20%25&foo=bar")
         XCTAssertEqual(request.allHTTPHeaderFields ?? [:], [
             "X-foo": "foo",
-            "X-BAR": " bar ",
+            "X-bar": "1&2 %",
         ])
 
         XCTAssertNil(request.httpBody)
     }
 
     func testPOST() {
+        let params = Params(
+            headers: ["foo": "bar", "baz": "1&2 %", "X-BAR": " bar "],
+            queryItems: ["foo": "bar", "baz": "1&2 %"],
+            body: .jsonObject(["f": 2, "fo": "bar", "foo": [ "baz": false ], "baz": [1, 2, 3]])
+        )
         let result = try! Session().requestFor(
             method: .post,
             url: "/post",
-            params: [
-                "foo": "bar",
-                "baz": "1&2 %"
-            ],
             relativeTo: URL(string: "https://httpbin.org"),
-            baseHeaders: [
-                "X-foo": "foo",
-                "X-bar": "1&2 %"
-            ],
-            additionalHeaders: [
-                "X-BAR": " bar "
-            ],
-            body: .jsonObject([
-                "f": 2,
-                "fo": "bar",
-                "foo": [
-                    "baz": false
-                ],
-                "baz": [1, 2, 3]
-            ])
+            params: params
         )
 
         guard let request = result.value else {
@@ -71,7 +53,9 @@ class SessionRequestGenerationTests: XCTestCase {
         XCTAssertEqual(request.httpMethod, "POST")
         XCTAssertEqual(request.url?.absoluteString, "https://httpbin.org/post?baz=1%262%20%25&foo=bar")
         XCTAssertEqual(request.allHTTPHeaderFields ?? [:], [
-            "X-foo": "foo",
+            "Content-Type": "application/json",
+            "foo": "bar",
+            "baz": "1&2 %",
             "X-BAR": " bar ",
         ])
 
