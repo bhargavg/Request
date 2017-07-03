@@ -102,12 +102,13 @@ public struct Session {
             requestBody = nil
             break
         case let .jsonObject(obj):
-            guard let data = try? JSONSerialization.data(withJSONObject: obj) else {
+            guard let data = try? JSONSerialization.data(withJSONObject: obj as NSDictionary, options: []) else {
                 return .failure(.invalidBody)
             }
+
             requestBody = data
         case let .jsonArray(array):
-            guard let data = try? JSONSerialization.data(withJSONObject: array) else {
+            guard let data = try? JSONSerialization.data(withJSONObject: array, options: []) else {
                 return .failure(.invalidBody)
             }
             requestBody = data
@@ -167,7 +168,7 @@ public struct Session {
     public enum Body {
         case none
         case jsonObject([String: Any])
-        case jsonArray([[String: Any]])
+        case jsonArray([Any])
         case formEncoded([String: String])
         case custom(Data)
 

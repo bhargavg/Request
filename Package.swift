@@ -8,3 +8,4 @@ let package = Package(
         .Package(url: "https://github.com/antitypical/Result", majorVersion: 3, minor: 2)
     ]
 )
+
