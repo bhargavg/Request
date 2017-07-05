@@ -31,10 +31,8 @@ class EndToEndTests: XCTestCase {
             queryItems: ["foo": "bar", "2": "%@#^)", "c": "2"],
             body: .none
         )
-        let result = get(
-            url: "https://httpbin.org/get",
-            params: params
-        )
+
+        let result = get(url: "https://httpbin.org/get", params: params)
 
         switch result {
         case let .success(response):
@@ -66,10 +64,8 @@ class EndToEndTests: XCTestCase {
             queryItems: ["foo": "bar", "2": "%@#^)", "c": "2"],
             body: .jsonObject(["foo": "bar"])
         )
-        let result = post(
-            url: "https://httpbin.org/post",
-            params: params
-        )
+
+        let result = post(url: "https://httpbin.org/post", params: params)
 
         switch result {
         case let .success(response):
@@ -96,8 +92,8 @@ class EndToEndTests: XCTestCase {
     }
 
     static var allTests = [
-        ("testSimpleGET",  testSimpleGET),
-        ("testSimplePOST",  testSimplePOST),
+        ("testSimpleGET", testSimpleGET),
+        ("testSimplePOST", testSimplePOST)
     ]
 }
 

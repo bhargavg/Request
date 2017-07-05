@@ -28,17 +28,6 @@ public struct Session {
 
     public func post(
         url: String,
-        params: (Params.Builder) -> ()
-    ) -> Result<Response, SessionError> {
-
-        let builder = Params.Builder()
-        params(builder)
-
-        return post(url: url, params: builder.build())
-    }
-
-    public func post(
-        url: String,
         params: Params = Params.default
     ) -> Result<Response, SessionError> {
         let fullParams = params.merging(sessionHeaders: headers)
@@ -61,16 +50,6 @@ public struct Session {
             relativeTo: baseURL,
             params: params
         ).flatMap(exec(request:))
-    }
-
-    public func get(
-        url: String,
-        params: (Params.Builder) -> ()
-    ) -> Result<Response, SessionError> {
-        let builder = Params.Builder()
-        params(builder)
-
-        return get(url: url, params: builder.build())
     }
 
     public func requestFor(

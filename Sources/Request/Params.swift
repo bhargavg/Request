@@ -16,6 +16,18 @@ public struct Params {
         self.body = body
     }
 
+    public init(builder block: (Builder) -> Void) {
+        let builder = Builder()
+        block(builder)
+        let params = builder.build()
+
+        self.init(
+            headers: params.headers,
+            queryItems: params.queryItems,
+            body: params.body
+        )
+    }
+
     func merging(sessionHeaders: [String: String]) -> Params {
         let allHeaders = sessionHeaders.merge(with: headers)
 
